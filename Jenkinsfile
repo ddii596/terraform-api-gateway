@@ -84,12 +84,21 @@ pipeline {
         }
 
         stage('Show Outputs') {
-            when {
-                expression { return !params.DESTROY_INFRA }
-            }
-            steps {
-                sh 'terraform output'
-            }
+    steps {
+        withCredentials([
+            string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+            string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+        ]) {
+            sh '''
+                export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                export AWS_DEFAULT_REGION=us-east-1
+
+                terraform output
+            '''
         }
+    }
+}
+
     }
 }

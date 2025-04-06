@@ -6,6 +6,7 @@ pipeline {
         string(name: 'BUCKET_NAME', defaultValue: 'meu-bucket-api', description: 'Nome do bucket S3')
         string(name: 'ROLE_NAME', defaultValue: 'api-role', description: 'Nome da role IAM')
         string(name: 'POLICY_NAME', defaultValue: 'api-policy', description: 'Nome da policy IAM')
+        booleanParam(name: 'DESTROY_INFRA', defaultValue: false, description: 'Marque para destruir a infraestrutura')
     }
 
     environment {
@@ -26,6 +27,9 @@ pipeline {
         }
 
         stage('Terraform Plan') {
+            when {
+                expression { return !params.DESTROY_INFRA }
+            }
             steps {
                 withCredentials([
                     string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
@@ -47,6 +51,9 @@ pipeline {
         }
 
         stage('Terraform Apply') {
+            when {
+                expression { return !params.DESTROY_INFRA }
+            }
             steps {
                 withCredentials([
                     string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
@@ -67,7 +74,34 @@ pipeline {
             }
         }
 
+        stage('Terraform Destroy') {
+            when {
+                expression { return params.DESTROY_INFRA }
+            }
+            steps {
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh """
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+
+                        terraform destroy -auto-approve \\
+                            -var="api_name=${params.API_NAME}" \\
+                            -var="bucket_name=${params.BUCKET_NAME}" \\
+                            -var="role_name=${params.ROLE_NAME}" \\
+                            -var="policy_name=${params.POLICY_NAME}"
+                    """
+                }
+            }
+        }
+
         stage('Show Outputs') {
+            when {
+                expression { return !params.DESTROY_INFRA }
+            }
             steps {
                 sh 'terraform output'
             }

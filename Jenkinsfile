@@ -31,7 +31,7 @@ pipeline {
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                         export AWS_DEFAULT_REGION=us-east-1
 
-                        terraform init
+                        terraform init -input=false -force-copy
                     '''
                 }
             }

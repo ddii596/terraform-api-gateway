@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://SEU_REPOSITORIO_AQUI.git'
+                git branch: 'main', url: 'https://github.com/ddii596/terraform-api-gateway'
             }
         }
 

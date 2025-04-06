@@ -28,12 +28,12 @@ pipeline {
         stage('Terraform Plan') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'aws-access-key-id', variable: 'aws-access-key-id'),
-                    string(credentialsId: 'aws-secret-access-key', variable: 'aws-secret-access-key')
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh """
-                        export aws-access-key-id=${aws-access-key-id}
-                        export aws-secret-access-key=${aws-secret-access-key}
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                         export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
 
                         terraform plan \\
@@ -49,12 +49,12 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'aws-access-key-id', variable: 'aws-access-key-id'),
-                    string(credentialsId: 'aws-secret-access-key', variable: 'aws-secret-access-key-secret-access-key')
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh """
-                        export aws-access-key-id=${aws-access-key-id}
-                        export aws-secret-access-key=${aws-secret-access-key}
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
                         export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
 
                         terraform apply -auto-approve \\

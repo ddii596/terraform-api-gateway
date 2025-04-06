@@ -101,7 +101,7 @@ terraform {
     bucket         = "ddii596-lab-terraform-statefile"
     key            = "api-gateway/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "ddii596-lab-terraform-lock"
+    use_lockfile = true
     encrypt        = true
   }
 }

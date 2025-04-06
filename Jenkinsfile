@@ -22,78 +22,63 @@ pipeline {
 
         stage('Terraform Init') {
             steps {
-                sh 'terraform init'
+                withCredentials([
+                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh '''
+                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                        export AWS_DEFAULT_REGION=us-east-1
+
+                        terraform init
+                    '''
+                }
             }
         }
 
         stage('Terraform Plan') {
-            when {
-                expression { return !params.DESTROY_INFRA }
-            }
             steps {
                 withCredentials([
                     string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
-                    sh """
+                    sh '''
                         export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
                         export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+                        export AWS_DEFAULT_REGION=us-east-1
 
-                        terraform plan \\
-                            -var="api_name=${params.API_NAME}" \\
-                            -var="bucket_name=${params.BUCKET_NAME}" \\
-                            -var="role_name=${params.ROLE_NAME}" \\
-                            -var="policy_name=${params.POLICY_NAME}"
-                    """
+                        terraform plan \
+                          -var="api_name=${API_NAME}" \
+                          -var="bucket_name=${BUCKET_NAME}" \
+                          -var="role_name=${ROLE_NAME}" \
+                          -var="policy_name=${POLICY_NAME}"
+                    '''
                 }
             }
         }
 
-        stage('Terraform Apply') {
-            when {
-                expression { return !params.DESTROY_INFRA }
-            }
+        stage('Terraform Apply or Destroy') {
             steps {
                 withCredentials([
                     string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
                     string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
-                    sh """
-                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+                    script {
+                        def action = params.DESTROY_INFRA ? "destroy -auto-approve" : "apply -auto-approve"
 
-                        terraform apply -auto-approve \\
-                            -var="api_name=${params.API_NAME}" \\
-                            -var="bucket_name=${params.BUCKET_NAME}" \\
-                            -var="role_name=${params.ROLE_NAME}" \\
-                            -var="policy_name=${params.POLICY_NAME}"
-                    """
-                }
-            }
-        }
+                        sh """
+                            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+                            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+                            export AWS_DEFAULT_REGION=us-east-1
 
-        stage('Terraform Destroy') {
-            when {
-                expression { return params.DESTROY_INFRA }
-            }
-            steps {
-                withCredentials([
-                    string(credentialsId: 'aws-access-key-id', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'aws-secret-access-key', variable: 'AWS_SECRET_ACCESS_KEY')
-                ]) {
-                    sh """
-                        export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-                        export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-                        export AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
-
-                        terraform destroy -auto-approve \\
-                            -var="api_name=${params.API_NAME}" \\
-                            -var="bucket_name=${params.BUCKET_NAME}" \\
-                            -var="role_name=${params.ROLE_NAME}" \\
-                            -var="policy_name=${params.POLICY_NAME}"
-                    """
+                            terraform ${action} \\
+                              -var="api_name=${API_NAME}" \\
+                              -var="bucket_name=${BUCKET_NAME}" \\
+                              -var="role_name=${ROLE_NAME}" \\
+                              -var="policy_name=${POLICY_NAME}"
+                        """
+                    }
                 }
             }
         }

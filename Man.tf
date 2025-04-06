@@ -89,7 +89,6 @@ resource "aws_api_gateway_deployment" "api_deploy" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   description = "Deploy automático pelo Terraform"
 }
-
 # Stage da API
 resource "aws_api_gateway_stage" "api_stage" {
   rest_api_id    = aws_api_gateway_rest_api.api.id
@@ -97,3 +96,12 @@ resource "aws_api_gateway_stage" "api_stage" {
   deployment_id  = aws_api_gateway_deployment.api_deploy.id
 }
 
+terraform {
+  backend "s3" {
+    bucket         = "]ddii596-lab-terraform-statefile"
+    key            = "api-gateway/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "ddii596-lab-terraform-lock"
+    encrypt        = true
+  }
+}
